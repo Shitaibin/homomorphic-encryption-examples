@@ -131,7 +131,7 @@ func (b *Bank) AddAccountBalance(accID string, amount uint64) error {
 }
 
 func (b *Bank) SubAccountBalance(accID string, amount uint64) error {
-	log.Printf("增加 [%s] [%s] 金额 [%d]", b.Name, accID, amount)
+	log.Printf("减少 [%s] [%s] 金额 [%d]", b.Name, accID, amount)
 	defer log.Println("余额修改完成")
 
 	if amount == 0 {
