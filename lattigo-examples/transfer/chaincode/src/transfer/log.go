@@ -7,6 +7,6 @@ var log *shim.ChaincodeLogger
 
 func init() {
 	if log == nil {
-		log = shim.NewLogger("homomoCC")
+		log = shim.NewLogger("TransferCC")
 	}
 }

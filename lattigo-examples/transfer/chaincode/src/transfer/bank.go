@@ -16,9 +16,10 @@ var banks = []string{BANK001, BANK002}
 var accs = []string{ACCOUNT001, ACCOUNT002}
 
 type Account struct {
-	ID      string          // 银行账号
-	BankID  string          // 银行ID
-	Balance *bfv.Ciphertext // 同态加密过的余额
+	ID      string // 银行账号
+	BankID  string // 银行ID
+	Balance []byte // 同态加密过的余额，并且进行了序列化
+	// Balance *bfv.Ciphertext // 同态加密过的余额
 }
 
 // 创建2个银行，分别包含2个默认账号，但不用户不设置余额
@@ -108,13 +109,14 @@ func NewBankAccounts() []*Account {
 // }
 
 // TODO 同态加密密钥信息转移到链下
-// type HeInfo struct {
-// 	sk        *bfv.SecretKey // 私钥
-// 	pk        *bfv.PublicKey // 公钥
-// 	encryptor bfv.Encryptor  // 明文加密的密文
-// 	decryptor bfv.Decryptor  // 解密密文
-// 	encoder   bfv.Encoder    // 数据编码到明文
-// }
+type HeInfo struct {
+	sk        *bfv.SecretKey // 私钥
+	pk        *bfv.PublicKey // 公钥
+	encryptor bfv.Encryptor  // 明文加密的密文
+	decryptor bfv.Decryptor  // 解密密文
+	encoder   bfv.Encoder    // 数据编码到明文
+}
+
 //
 // func NewHeInfo(params *bfv.Parameters) *HeInfo {
 // 	// 同态加密的公私钥，私钥创建decryptor和encryptor
