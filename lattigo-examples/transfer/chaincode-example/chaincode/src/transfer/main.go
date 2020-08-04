@@ -31,21 +31,26 @@ func (t *TransferChainCode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error(err.Error())
 		}
 	}
+
+	log.Info("TransferChainCode init done.")
+
 	return shim.Success([]byte("ok"))
 }
 
 func (t *TransferChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	f, args := stub.GetFunctionAndParameters()
 
+	log.Infof("Invoke func = %v, args = %v", f, len(args))
+
 	switch f {
-	case "SetAccountBalance":
-		return t.SetAccountBalance(stub, args)
 	case "AddBankPublicKey":
 		return t.AddBankPublicKey(stub, args)
-	case "Transfer":
-		return t.Transfer(stub, args)
+	case "SetAccountBalance":
+		return t.SetAccountBalance(stub, args)
 	case "QueryAccountBalance":
 		return t.QueryAccountBalance(stub, args)
+	case "Transfer":
+		return t.Transfer(stub, args)
 	}
 	return shim.Success([]byte("ok"))
 }
