@@ -49,11 +49,11 @@ func (b *BankController) Post() {
 	}
 
 	// 	创建go的client，调用链码，把链码结果生成json返回
-	_, err := service.NewBank(req.BankID)
+	bank, err := service.NewBank(req.BankID)
 	if err != nil {
 		msg := fmt.Sprintf("new bank error: %s", err.Error())
 		b.Data["json"] = msg
 	} else {
-		b.Data["json"] = "Create bank success."
+		b.Data["json"] = bank
 	}
 }

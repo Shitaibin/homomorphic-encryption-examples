@@ -2,6 +2,9 @@ package service
 
 import (
 	"github.com/astaxie/beego/logs"
+	"github.com/hyperledger/fabric-protos-go/peer"
+	"github.com/hyperledger/fabric-sdk-go/pkg/client/channel"
+	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/fab"
 	"github.com/ldsec/lattigo/bfv"
 	"github.com/pkg/errors"
 )
@@ -44,9 +47,10 @@ func SkPkToString() (string, string, error) {
 }
 
 type Bank struct {
-	BankID string
-	SK     string
-	PK     string
+	BankID    string                `json:"bankId"`
+	TxID      fab.TransactionID     `json:"txId"`
+	ValidCode peer.TxValidationCode `json:"validCode"`
+	Message   string                `json:"msg"` // 错误信息
 }
 
 func NewBank(bid string) (*Bank, error) {
@@ -62,9 +66,35 @@ func NewBank(bid string) (*Bank, error) {
 	}
 	logs.Info("Bank = %v, len(SK) = %d, len(PK) = %d", bid, len(sk), len(pk))
 
+	// 银行公钥上链
+	pb, err := PK.MarshalBinary()
+	if err != nil {
+		return nil, errors.WithMessage(err, "bank pk marshal error")
+	}
+
+	args := packArgs([]string{bid, string(pb)})
+	req := channel.Request{
+		ChaincodeID: ChainCodeName,
+		Fcn:         "AddBankPublicKey",
+		Args:        args,
+	}
+
+	reqPeers := channel.WithTargetEndpoints(peers...)
+	resp, err := CLI.cc.Execute(req, reqPeers)
+	if err != nil {
+		return nil, errors.WithMessage(err, "invoke chaincode error")
+	}
+
+	logs.Info("Invoke chaincode response:\n"+
+		"id: %v\nvalidate: %v\nchaincode status: %v\n\n",
+		resp.TransactionID,
+		resp.TxValidationCode,
+		resp.ChaincodeStatus)
+
 	return &Bank{
-		BankID: bid,
-		SK:     sk,
-		PK:     pk,
+		BankID:    bid,
+		TxID:      resp.TransactionID,
+		ValidCode: resp.TxValidationCode,
+		Message:   "success",
 	}, nil
 }

@@ -15,6 +15,7 @@ require (
 	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
+	github.com/hyperledger/fabric-protos-go v0.0.0-20191121202242-f5500d5e3e85
 	github.com/hyperledger/fabric-sdk-go v1.0.0-beta2
 	github.com/hyperledger/fabric-sdk-go/third_party/github.com/hyperledger/fabric v0.0.0-20190411180201-5a9a0e749e4f // indirect
 	github.com/json-iterator/go v1.1.10 // indirect

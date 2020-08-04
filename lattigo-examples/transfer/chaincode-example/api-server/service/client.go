@@ -19,6 +19,7 @@ var CLI *Client
 const (
 	// org1CfgPath = "./../sdk-config/org1sdk-config.yaml"
 	org1CfgPath = "/Users/shitaibin/Workspace/homomorphic-encryption-examples/lattigo-examples/transfer/chaincode-example/api-server/sdk-config/org1sdk-config.yaml"
+	org2CfgPath = "/Users/shitaibin/Workspace/homomorphic-encryption-examples/lattigo-examples/transfer/chaincode-example/api-server/sdk-config/org2sdk-config.yaml"
 )
 
 var (
@@ -45,10 +46,16 @@ type Client struct {
 	CCGoPath  string // GOPATH used for chaincode
 }
 
-func NewOrg1Peer1Client() *Client {
-	logs.Info("Create fabric client for org1 (Bank_001)")
+func NewOrg1Peer0Client() *Client {
+	logs.Info("Create fabric client for org1 (bank001)")
 
 	return NewClient(org1CfgPath, "Org1", "Admin", "User1")
+}
+
+func NewOrg2Peer0Client() *Client {
+	logs.Info("Create fabric client for org2 (bank002)")
+
+	return NewClient(org2CfgPath, "Org2", "Admin", "User1")
 }
 
 func NewClient(cfg, org, admin, user string) *Client {

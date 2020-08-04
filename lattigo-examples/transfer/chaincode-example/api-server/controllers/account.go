@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/hyperledger/fabric-protos-go/peer"
+	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/fab"
+
 	"github.com/astaxie/beego/logs"
 
 	"github.com/astaxie/beego"
@@ -21,10 +24,12 @@ type AccountRequest struct {
 }
 
 type AccountResponse struct {
-	BankID    string `json:"bankId"`
-	AccountID string `json:"accountId"`
-	Balance   uint64 `json:"balance"`
-	Message   string `json:"msg"` // 错误信息
+	BankID    string                `json:"bankId"`
+	AccountID string                `json:"accountId"`
+	Balance   uint64                `json:"balance"`
+	TxID      fab.TransactionID     `json:"txId"`
+	ValidCode peer.TxValidationCode `json:"validCode"`
+	Message   string                `json:"msg"` // 错误信息
 }
 
 // @router /v1/account/:id [get]
@@ -45,7 +50,7 @@ func (a *AccountController) Get() {
 
 	bal, err := service.GetAccountBalance(bid, aid)
 	if err != nil {
-		msg := fmt.Sprintf("GetAccountBalance error: %s", err)
+		msg := fmt.Sprintf("GetAccountBalance error: %v", err)
 		logs.Error(msg)
 		a.Data["json"] = AccountResponse{
 			BankID:    bid,
@@ -58,6 +63,7 @@ func (a *AccountController) Get() {
 			BankID:    bid,
 			AccountID: aid,
 			Balance:   bal,
+			Message:   "success",
 		}
 	}
 }
@@ -81,11 +87,34 @@ func (a *AccountController) Put() {
 		return
 	}
 
-	if err := service.SetAccountBalance(req.BankID, req.AccountID, req.Balance); err != nil {
-		msg := fmt.Sprintf("SetAccountBalance error: %s", err.Error())
+	// if err := service.SetAccountBalance(req.BankID, req.AccountID, req.Balance); err != nil {
+	// 	msg := fmt.Sprintf("SetAccountBalance error: %s", err.Error())
+	// 	logs.Error(msg)
+	// 	a.Data["json"] = msg
+	// } else {
+	// 	a.Data["json"] = "Set account balance success."
+	// }
+
+	txid, validCode, err := service.SetAccountBalance(req.BankID, req.AccountID, req.Balance)
+	if err != nil {
+		msg := fmt.Sprintf("GetAccountBalance error: %v", err)
 		logs.Error(msg)
-		a.Data["json"] = msg
+		a.Data["json"] = AccountResponse{
+			BankID:    req.BankID,
+			AccountID: req.AccountID,
+			Balance:   req.Balance,
+			TxID:      txid,
+			ValidCode: validCode,
+			Message:   msg,
+		}
 	} else {
-		a.Data["json"] = "Set account balance success."
+		a.Data["json"] = AccountResponse{
+			BankID:    req.BankID,
+			AccountID: req.AccountID,
+			Balance:   req.Balance,
+			TxID:      txid,
+			ValidCode: validCode,
+			Message:   "success",
+		}
 	}
 }

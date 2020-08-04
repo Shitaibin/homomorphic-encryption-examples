@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/hyperledger/fabric-protos-go/peer"
+	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/fab"
+
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 )
@@ -22,16 +25,18 @@ type TransferRequest struct {
 }
 
 type TransferResponse struct {
-	FromBankID    string `json:"fromBankId"`
-	FromAccountID string `json:"fromAccountId"`
-	ToBankID      string `json:"toBankId"`
-	ToAccountID   string `json:"toAccountId"`
-	Message       string `json:"msg"` // 错误信息
+	FromBankID    string                `json:"fromBankId"`
+	FromAccountID string                `json:"fromAccountId"`
+	ToBankID      string                `json:"toBankId"`
+	ToAccountID   string                `json:"toAccountId"`
+	TxID          fab.TransactionID     `json:"txId"`
+	ValidCode     peer.TxValidationCode `json:"validCode"`
+	Message       string                `json:"msg"` // 错误信息
 }
 
 // @router /v1/transfer [post]
 func (t *TransferController) Post() {
-	logs.Debug("AccountController.Get")
+	logs.Debug("TransferController.Post")
 
 	defer t.ServeJSON()
 
@@ -43,18 +48,28 @@ func (t *TransferController) Post() {
 		return
 	}
 
-	err := service.Transfer(req.FromBankID, req.FromAccountID, req.ToBankID, req.ToAccountID, req.Amount)
+	txid, validCode, err := service.Transfer(req.FromBankID, req.FromAccountID, req.ToBankID, req.ToAccountID, req.Amount)
 	if err != nil {
-		msg := fmt.Sprintf("GetAccountBalance error: %s", err)
+		msg := fmt.Sprintf("TransferController error: %s", err)
 		logs.Error(msg)
-		t.Data["json"] = msg
+		t.Data["json"] = TransferResponse{
+			FromBankID:    req.FromBankID,
+			FromAccountID: req.FromAccountID,
+			ToBankID:      req.ToBankID,
+			ToAccountID:   req.ToAccountID,
+			TxID:          txid,
+			ValidCode:     validCode,
+			Message:       err.Error(),
+		}
 	} else {
 		t.Data["json"] = TransferResponse{
 			FromBankID:    req.FromBankID,
 			FromAccountID: req.FromAccountID,
 			ToBankID:      req.ToBankID,
 			ToAccountID:   req.ToAccountID,
-			Message:       err.Error(),
+			TxID:          txid,
+			ValidCode:     validCode,
+			Message:       "success",
 		}
 	}
 }

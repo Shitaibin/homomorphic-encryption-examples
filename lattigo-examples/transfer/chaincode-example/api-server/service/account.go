@@ -2,14 +2,16 @@ package service
 
 import (
 	"github.com/astaxie/beego/logs"
+	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric-sdk-go/pkg/client/channel"
+	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/fab"
 	"github.com/ldsec/lattigo/bfv"
 	"github.com/pkg/errors"
 )
 
-func SetAccountBalance(BankID string, AccountID string, Balance uint64) error {
+func SetAccountBalance(BankID string, AccountID string, Balance uint64) (fab.TransactionID, peer.TxValidationCode, error) {
 	if Balance < 0 {
-		return errors.New("Balance is negative")
+		return "", 0, errors.New("Balance is negative")
 	}
 
 	// todo
@@ -23,7 +25,7 @@ func SetAccountBalance(BankID string, AccountID string, Balance uint64) error {
 	cipBal := encryptor.EncryptNew(plain)
 	binBal, err := cipBal.MarshalBinary()
 	if err != nil {
-		return errors.WithMessage(err, "marshal cipher balance error")
+		return "", 0, errors.WithMessage(err, "marshal cipher balance error")
 	}
 
 	args := packArgs([]string{BankID, AccountID, string(binBal)})
@@ -35,16 +37,17 @@ func SetAccountBalance(BankID string, AccountID string, Balance uint64) error {
 
 	reqPeers := channel.WithTargetEndpoints(peers...)
 	resp, err := CLI.cc.Execute(req, reqPeers)
+	if err != nil {
+		return "", 0, errors.WithMessage(err, "invoke chaincode error")
+	}
+
 	logs.Info("Invoke chaincode response:\n"+
 		"id: %v\nvalidate: %v\nchaincode status: %v\n\n",
 		resp.TransactionID,
 		resp.TxValidationCode,
 		resp.ChaincodeStatus)
-	if err != nil {
-		return errors.WithMessage(err, "invoke chaincode error")
-	}
 
-	return nil
+	return resp.TransactionID, resp.TxValidationCode, nil
 }
 
 func GetAccountBalance(BankID string, AccountID string) (uint64, error) {
