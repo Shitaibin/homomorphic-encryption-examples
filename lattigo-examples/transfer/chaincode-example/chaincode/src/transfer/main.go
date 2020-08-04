@@ -62,7 +62,7 @@ func (t *TransferChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response
 func (t *TransferChainCode) SetAccountBalance(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
 	if len(args) < 3 {
-		return shim.Error(fmt.Sprintf("need 3 args, got %v", len(args)))
+		return shim.Error(fmt.Sprintf("SetAccountBalance need 3 args, got %v", len(args)))
 	}
 
 	bankID, accountID := args[0], args[1]
@@ -109,7 +109,7 @@ func (t *TransferChainCode) SetAccountBalance(stub shim.ChaincodeStubInterface, 
 // args[0]: pkByte, []byte, 公钥序列化的字节码
 func (t *TransferChainCode) AddBankPublicKey(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) < 2 {
-		return shim.Error(fmt.Sprintf("need 2 args, got %v", len(args)))
+		return shim.Error(fmt.Sprintf("AddBankPublicKey need 2 args, got %v", len(args)))
 	}
 
 	bankID, pkByte := args[0], []byte(args[1])
@@ -128,7 +128,7 @@ func (t *TransferChainCode) AddBankPublicKey(stub shim.ChaincodeStubInterface, a
 // args[4]: amount, uint64, SHOULD be plain text
 func (t *TransferChainCode) Transfer(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) < 5 {
-		return shim.Error(fmt.Sprintf("need 5 args, got %v", len(args)))
+		return shim.Error(fmt.Sprintf("AddBankPublicKey need 5 args, got %v", len(args)))
 	}
 
 	fromBankID, fromAccountID, toBankID, toAccountID := args[0], args[1], args[2], args[3]
@@ -224,7 +224,7 @@ func unmarshalBal(data []byte) (*bfv.Ciphertext, error) {
 // args[1]: accountID, string
 func (t *TransferChainCode) QueryAccountBalance(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) < 2 {
-		return shim.Error(fmt.Sprintf("need 2 args, got %v", len(args)))
+		return shim.Error(fmt.Sprintf("QueryAccountBalance need 2 args, got %v", len(args)))
 	}
 
 	bankID, accountID := args[0], args[1]

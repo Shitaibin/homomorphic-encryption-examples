@@ -6,12 +6,12 @@ import (
 )
 
 // 银行ID
-const BANK001 = "bank_001"
-const BANK002 = "bank_002"
+const BANK001 = "bank001"
+const BANK002 = "bank002"
 
 // 账户ID
-const ACCOUNT001 = "acc_001"
-const ACCOUNT002 = "acc_002"
+const ACCOUNT001 = "acc001"
+const ACCOUNT002 = "acc002"
 
 var banks = []string{BANK001, BANK002}
 var accs = []string{ACCOUNT001, ACCOUNT002}
