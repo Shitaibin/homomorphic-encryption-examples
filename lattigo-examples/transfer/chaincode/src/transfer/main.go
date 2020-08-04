@@ -1,13 +1,13 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-
-	"github.com/ldsec/lattigo/bfv"
+	"strconv"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
+	"github.com/ldsec/lattigo/bfv"
+	"github.com/pkg/errors"
 )
 
 func main() {
@@ -40,6 +40,8 @@ func (t *TransferChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response
 	switch f {
 	case "SetAccountBalance":
 		return t.SetAccountBalance(stub, args)
+	case "AddBankPublicKey":
+		return t.AddBankPublicKey(stub, args)
 	case "Transfer":
 		return t.Transfer(stub, args)
 	case "QueryAccountBalance":
@@ -59,7 +61,7 @@ func (t *TransferChainCode) SetAccountBalance(stub shim.ChaincodeStubInterface, 
 	}
 
 	bankID, accountID := args[0], args[1]
-	log.Infof("set balance [%s] [%s]", bankID, accountID)
+	log.Infof("SetAccountBalance [%s] [%s]", bankID, accountID)
 
 	var err error
 
@@ -97,9 +99,119 @@ func (t *TransferChainCode) SetAccountBalance(stub shim.ChaincodeStubInterface, 
 	return shim.Success([]byte("ok"))
 }
 
-// todo 完成2个账户间的转账
+// AddBankPublicKey 银行上传同态机密公钥
+// args[0]: bankID, string
+// args[0]: pkByte, []byte, 公钥序列化的字节码
+func (t *TransferChainCode) AddBankPublicKey(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) < 2 {
+		return shim.Error(fmt.Sprintf("need 2 args, got %v", len(args)))
+	}
+
+	bankID, pkByte := args[0], []byte(args[1])
+	// 不查询银行，直接Add
+	if err := PutBank(stub, bankID, pkByte); err != nil {
+		return shim.Error(errors.WithMessage(err, "AddBankPublicKey").Error())
+	}
+	return shim.Success([]byte(fmt.Sprintf("Add public key for bank [%v] success.", bankID)))
+}
+
+// Transfer 完成2个账户间的转账
+// args[0]: fromBankID, string
+// args[1]: fromAccountID, string
+// args[2]: toBankID, string
+// args[3]: toAccountID, string
+// args[4]: amount, uint64, SHOULD be plain text
 func (t *TransferChainCode) Transfer(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) < 5 {
+		return shim.Error(fmt.Sprintf("need 5 args, got %v", len(args)))
+	}
+
+	fromBankID, fromAccountID, toBankID, toAccountID := args[0], args[1], args[2], args[3]
+	// 获取2个用户的余额，
+	from, err := t.GetAccount(stub, fromBankID, fromAccountID)
+	if err != nil {
+		return shim.Error(fmt.Sprintf("read from account error = %v", err.Error()))
+	}
+
+	to, err := t.GetAccount(stub, toBankID, toAccountID)
+	if err != nil {
+		return shim.Error(fmt.Sprintf("read to account error = %v", err.Error()))
+	}
+
+	// 解析amount
+	amount, err := strconv.ParseUint(args[4], 10, 64)
+	if err != nil {
+		return shim.Error(fmt.Sprintf("parse amount error = %v", err.Error()))
+	}
+
+	// 获取2个账户余额
+	fromBal, err := unmarshalBal(from.Balance)
+	if err != nil {
+		return shim.Error(fmt.Sprintf("unmarshal from account [%s - %s] balance error = %v",
+			from.BankID, from.ID, err.Error()))
+	}
+	toBal, err := unmarshalBal(to.Balance)
+	if err != nil {
+		return shim.Error(fmt.Sprintf("unmarshal to account [%s - %s] balance error = %v",
+			to.BankID, to.ID, err.Error()))
+	}
+
+	// 每家银行的余额需要分别使用自己的密钥计算
+	fromBank, err := GetBank(stub, fromBankID)
+	if err != nil {
+		return shim.Error(errors.WithMessage(err, "Transfer error").Error())
+	}
+	toBank, err := GetBank(stub, toBankID)
+	if err != nil {
+		return shim.Error(errors.WithMessage(err, "Transfer error").Error())
+	}
+
+	fromAmount, err := fromBank.EncryptAmountNew(amount)
+	if err != nil {
+		return shim.Error(errors.WithMessage(err, "Transfer encrypt from amount error").Error())
+	}
+	toAmount, err := toBank.EncryptAmountNew(amount)
+	if err != nil {
+		return shim.Error(errors.WithMessage(err, "Transfer encrypt from amount error").Error())
+	}
+
+	// 调用2个银行密钥对amount加密，然后计算
+	evaluator.Sub(fromBal, fromAmount, fromBal)
+	evaluator.Add(toBal, toAmount, toBal)
+	fromData, err := fromBal.MarshalBinary()
+	if err != nil {
+		return shim.Error(fmt.Sprintf("marshal from balance error = %v", err.Error()))
+	}
+	toData, err := toBal.MarshalBinary()
+	if err != nil {
+		return shim.Error(fmt.Sprintf("marshal to balance error = %v", err.Error()))
+	}
+
+	// 把新余额保存到用户
+	from.Balance = fromData
+	to.Balance = toData
+
+	if err := t.PutAccount(stub, from); err != nil {
+		msg := fmt.Sprintf("save from account error, bank = %v, account = %v, error = %v",
+			from.BankID, from.ID, err.Error())
+		return shim.Error(msg)
+	}
+	if err := t.PutAccount(stub, to); err != nil {
+		msg := fmt.Sprintf("save to account error, bank = %v, account = %v, error = %v",
+			to.BankID, to.ID, err.Error())
+		return shim.Error(msg)
+	}
+
+	// 发布转账完成的事件，包含转账的2个用户
+	stub.SetEvent(ChainCodeEventName_Transfer, NewMarshaledTransferEvent(fromBankID, fromAccountID, toBankID, toAccountID, args[4]))
+
 	return shim.Success([]byte("ok"))
+}
+
+func unmarshalBal(data []byte) (*bfv.Ciphertext, error) {
+	gotCipBal := &bfv.Ciphertext{}
+	err := gotCipBal.UnmarshalBinary(data)
+	return gotCipBal, err
 }
 
 // QueryAccountBalance 查询某个账户的余额
@@ -120,54 +232,4 @@ func (t *TransferChainCode) QueryAccountBalance(stub shim.ChaincodeStubInterface
 	}
 
 	return shim.Success(acc.Balance)
-}
-
-// 利用bankID和account.ID创建复合键，把账户对象保存到db
-func (t *TransferChainCode) PutAccount(stub shim.ChaincodeStubInterface, acc *Account) error {
-
-	ck, err := stub.CreateCompositeKey(BankObjType, []string{acc.BankID, acc.ID})
-	if err != nil {
-		log.Criticalf(err.Error())
-		return fmt.Errorf("create key error: %s", err.Error())
-	}
-
-	data, err := json.Marshal(acc)
-	if err != nil {
-		log.Criticalf(err.Error())
-		return fmt.Errorf("marshal account error: %s", err.Error())
-	}
-
-	if err = stub.PutState(ck, data); err != nil {
-		log.Critical(err.Error())
-		return fmt.Errorf("save account to db error: %s", err.Error())
-	}
-
-	return nil
-}
-
-// 利用bankID和account.ID创建复合键，从db读取账户
-func (t *TransferChainCode) GetAccount(stub shim.ChaincodeStubInterface, bankID string, accID string) (*Account, error) {
-
-	ck, err := stub.CreateCompositeKey(BankObjType, []string{bankID, accID})
-	if err != nil {
-		log.Criticalf(err.Error())
-		return nil, fmt.Errorf("create key error: %s", err.Error())
-	}
-
-	data, err := stub.GetState(ck)
-	if err != nil {
-		log.Critical(err.Error())
-		return nil, fmt.Errorf("get account from db error: %s", err.Error())
-	}
-
-	if data == nil {
-		return nil, fmt.Errorf("no account: %s %s", bankID, accID)
-	}
-
-	var acc Account
-	if err = json.Unmarshal(data, &acc); err != nil {
-		log.Critical(err.Error())
-		return nil, fmt.Errorf("unmarshal account error: %s", err.Error())
-	}
-	return &acc, nil
 }

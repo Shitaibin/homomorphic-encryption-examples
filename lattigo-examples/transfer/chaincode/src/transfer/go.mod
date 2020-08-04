@@ -10,7 +10,7 @@ require (
 	github.com/hyperledger/fabric-amcl v0.0.0-20200424173818-327c9e2cf77a // indirect
 	github.com/ldsec/lattigo v1.3.0
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pkg/errors v0.9.1
 	github.com/spf13/viper v1.7.0 // indirect
 	github.com/stretchr/testify v1.6.1
 	github.com/sykesm/zap-logfmt v0.0.3 // indirect
