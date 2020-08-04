@@ -15,16 +15,16 @@ type AccountController struct {
 }
 
 type AccountRequest struct {
-	BankID    string  `json:"bankId"`
-	AccountID string  `json:"accountId"`
-	Balance   float64 `json:"balance"`
+	BankID    string `json:"bankId"`
+	AccountID string `json:"accountId"`
+	Balance   uint64 `json:"balance"`
 }
 
 type AccountResponse struct {
-	BankID    string  `json:"bankId"`
-	AccountID string  `json:"accountId"`
-	Balance   float64 `json:"balance"`
-	Message   string  `json:"msg"` // 错误信息
+	BankID    string `json:"bankId"`
+	AccountID string `json:"accountId"`
+	Balance   uint64 `json:"balance"`
+	Message   string `json:"msg"` // 错误信息
 }
 
 // @router /v1/account/:id [get]
@@ -33,24 +33,31 @@ func (a *AccountController) Get() {
 
 	defer a.ServeJSON()
 
-	var req AccountRequest
-	if err := json.Unmarshal(a.Ctx.Input.RequestBody, &req); err != nil {
-		msg := fmt.Sprintf("unmarshal AccountRequest error: %s", err.Error())
+	bid := a.GetString("bankId")
+	aid := a.GetString("accountId")
+
+	if len(bid) <= 0 || len(aid) <= 0 {
+		msg := fmt.Sprintf("not enough params for AccountController, bid = %v, aid = %v", bid, aid)
 		logs.Error(msg)
 		a.Data["json"] = msg
+		return
 	}
 
-	bal, err := service.GetAccountBalance(req.BankID, req.AccountID)
+	bal, err := service.GetAccountBalance(bid, aid)
 	if err != nil {
 		msg := fmt.Sprintf("GetAccountBalance error: %s", err)
 		logs.Error(msg)
-		a.Data["json"] = msg
+		a.Data["json"] = AccountResponse{
+			BankID:    bid,
+			AccountID: aid,
+			Balance:   bal,
+			Message:   msg,
+		}
 	} else {
 		a.Data["json"] = AccountResponse{
-			BankID:    req.BankID,
-			AccountID: req.AccountID,
+			BankID:    bid,
+			AccountID: aid,
 			Balance:   bal,
-			Message:   err.Error(),
 		}
 	}
 }
@@ -71,6 +78,7 @@ func (a *AccountController) Put() {
 		msg := fmt.Sprintf("unmarshal AccountRequest error: %s", err.Error())
 		logs.Error(msg)
 		a.Data["json"] = msg
+		return
 	}
 
 	if err := service.SetAccountBalance(req.BankID, req.AccountID, req.Balance); err != nil {

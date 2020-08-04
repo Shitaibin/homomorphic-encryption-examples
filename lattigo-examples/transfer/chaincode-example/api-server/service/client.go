@@ -23,6 +23,7 @@ const (
 
 var (
 	peer0Org1 = "peer0.org1.example.com"
+	peers     = []string{peer0Org1}
 )
 
 type Client struct {

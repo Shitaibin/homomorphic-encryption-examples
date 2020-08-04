@@ -40,6 +40,7 @@ func (t *TransferController) Post() {
 		msg := fmt.Sprintf("unmarshal AccountRequest error: %s", err.Error())
 		logs.Error(msg)
 		t.Data["json"] = msg
+		return
 	}
 
 	err := service.Transfer(req.FromBankID, req.FromAccountID, req.ToBankID, req.ToAccountID, req.Amount)
