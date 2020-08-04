@@ -130,6 +130,7 @@ func (b *Bank) AddAccountBalance(accID string, amount uint64) error {
 	return nil
 }
 
+// SubAccountBalance 金额必须使用明文
 func (b *Bank) SubAccountBalance(accID string, amount uint64) error {
 	log.Printf("减少 [%s] [%s] 金额 [%d]", b.Name, accID, amount)
 	defer log.Println("余额修改完成")
@@ -145,7 +146,7 @@ func (b *Bank) SubAccountBalance(accID string, amount uint64) error {
 
 	bal := b.Accounts[accID].Balance
 
-	// TODO 检查余额是否不足以进行转账
+	// 提醒：同态加密无法进行大于、小于等逻辑判断，因此无法检查余额是否不足以进行转账
 
 	// 转账：同态加密运算
 	newBal := evaluator.SubNew(bal, cepAmount)
