@@ -38,6 +38,15 @@ func (t *TransferChainCode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 }
 
 func (t *TransferChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
+	// todo recover用的不好，没错误的时候也会捕获，如何不改变原有的行为呢？
+	// defer func() {
+	// 	err := recover()
+	// 	if err != nil {
+	// 		shim.Error(fmt.Sprintf("catch panic: %v", err.(error).Error()))
+	// 	}
+	// 	shim.Success([]byte(fmt.Sprintf("no error should not return: error = %v", err.(error).Error())))
+	// }()
+
 	f, args := stub.GetFunctionAndParameters()
 
 	log.Infof("Invoke func = %v, args = %v", f, len(args))
@@ -70,11 +79,16 @@ func (t *TransferChainCode) SetAccountBalance(stub shim.ChaincodeStubInterface, 
 
 	var err error
 
+	var msg string = "transfer success"
+	defer func() {
+		log.Debug(msg)
+	}()
+
 	// 解析参数
 	cipBal := &bfv.Ciphertext{}
 	err = cipBal.UnmarshalBinary([]byte(args[2]))
 	if err != nil {
-		msg := fmt.Sprintf("unmarshal cipher balance error, bank = %v, account = %v, error = %v",
+		msg = fmt.Sprintf("unmarshal cipher balance error, bank = %v, account = %v, error = %v",
 			bankID, accountID, err.Error())
 		return shim.Error(msg)
 	}
@@ -82,7 +96,7 @@ func (t *TransferChainCode) SetAccountBalance(stub shim.ChaincodeStubInterface, 
 	// 需要读取account余额
 	acc, err := t.GetAccount(stub, bankID, accountID)
 	if err != nil {
-		msg := fmt.Sprintf("get account error, bank = %v, account = %v, error = %v",
+		msg = fmt.Sprintf("get account error, bank = %v, account = %v, error = %v",
 			bankID, accountID, err.Error())
 		return shim.Error(msg)
 	}
@@ -96,7 +110,7 @@ func (t *TransferChainCode) SetAccountBalance(stub shim.ChaincodeStubInterface, 
 
 	// 保存account
 	if err = t.PutAccount(stub, acc); err != nil {
-		msg := fmt.Sprintf("save account error, bank = %v, account = %v, error = %v",
+		msg = fmt.Sprintf("save account error, bank = %v, account = %v, error = %v",
 			bankID, accountID, err.Error())
 		return shim.Error(msg)
 	}
@@ -131,53 +145,82 @@ func (t *TransferChainCode) Transfer(stub shim.ChaincodeStubInterface, args []st
 		return shim.Error(fmt.Sprintf("AddBankPublicKey need 5 args, got %v", len(args)))
 	}
 
+	var msg string = "transfer success"
+	defer func() {
+		log.Info(msg)
+	}()
+
 	fromBankID, fromAccountID, toBankID, toAccountID := args[0], args[1], args[2], args[3]
 	// 获取2个用户的余额，
 	from, err := t.GetAccount(stub, fromBankID, fromAccountID)
 	if err != nil {
-		return shim.Error(fmt.Sprintf("read from account error = %v", err.Error()))
+		msg = fmt.Sprintf("read from account error = %v", err.Error())
+		return shim.Error(msg)
 	}
 
 	to, err := t.GetAccount(stub, toBankID, toAccountID)
 	if err != nil {
-		return shim.Error(fmt.Sprintf("read to account error = %v", err.Error()))
+		msg = fmt.Sprintf("read to account error = %v", err.Error())
+		return shim.Error(msg)
 	}
 
 	// 解析amount
 	amount, err := strconv.ParseUint(args[4], 10, 64)
 	if err != nil {
-		return shim.Error(fmt.Sprintf("parse amount error = %v", err.Error()))
+		msg = fmt.Sprintf("parse amount error = %v", err.Error())
+		return shim.Error(msg)
+	}
+
+	// 转账参数合法性检查
+	if from == nil {
+		return shim.Error("from is nil")
+	}
+	if from.Balance == nil || len(from.Balance) <= 0 {
+		return shim.Error("from.Balance is nil or empty")
+	}
+
+	if to == nil {
+		return shim.Error("to is nil")
+	}
+	if to.Balance == nil || len(to.Balance) <= 0 {
+		return shim.Error("to.Balance is nil or empty")
 	}
 
 	// 获取2个账户余额
 	fromBal, err := unmarshalBal(from.Balance)
 	if err != nil {
-		return shim.Error(fmt.Sprintf("unmarshal from account [%s - %s] balance error = %v",
-			from.BankID, from.ID, err.Error()))
+		msg = fmt.Sprintf("unmarshal from account [%s - %s] balance error = %v",
+			from.BankID, from.ID, err.Error())
+		return shim.Error(msg)
 	}
 	toBal, err := unmarshalBal(to.Balance)
 	if err != nil {
-		return shim.Error(fmt.Sprintf("unmarshal to account [%s - %s] balance error = %v",
-			to.BankID, to.ID, err.Error()))
+		msg := fmt.Sprintf("unmarshal to account [%s - %s] balance error = %v",
+			to.BankID, to.ID, err.Error())
+		return shim.Error(msg)
 	}
 
 	// 每家银行的余额需要分别使用自己的密钥计算
 	fromBank, err := GetBank(stub, fromBankID)
 	if err != nil {
-		return shim.Error(errors.WithMessage(err, "Transfer error").Error())
+		msg = errors.WithMessage(err, "Transfer error").Error()
+		return shim.Error(msg)
 	}
 	toBank, err := GetBank(stub, toBankID)
 	if err != nil {
-		return shim.Error(errors.WithMessage(err, "Transfer error").Error())
+		msg = errors.WithMessage(err, "Transfer error").Error()
+		return shim.Error(msg)
 	}
 
 	fromAmount, err := fromBank.EncryptAmountNew(amount)
 	if err != nil {
-		return shim.Error(errors.WithMessage(err, "Transfer encrypt from amount error").Error())
+		msg = errors.WithMessage(err, "Transfer encrypt from amount error").Error()
+		return shim.Error(msg)
 	}
 	toAmount, err := toBank.EncryptAmountNew(amount)
 	if err != nil {
-		return shim.Error(errors.WithMessage(err, "Transfer encrypt from amount error").Error())
+		msg = errors.WithMessage(err, "Transfer encrypt from amount error").Error()
+		return shim.Error(msg)
 	}
 
 	// 调用2个银行密钥对amount加密，然后计算
@@ -185,11 +228,13 @@ func (t *TransferChainCode) Transfer(stub shim.ChaincodeStubInterface, args []st
 	evaluator.Add(toBal, toAmount, toBal)
 	fromData, err := fromBal.MarshalBinary()
 	if err != nil {
-		return shim.Error(fmt.Sprintf("marshal from balance error = %v", err.Error()))
+		msg = fmt.Sprintf("marshal from balance error = %v", err.Error())
+		return shim.Error(msg)
 	}
 	toData, err := toBal.MarshalBinary()
 	if err != nil {
-		return shim.Error(fmt.Sprintf("marshal to balance error = %v", err.Error()))
+		msg = fmt.Sprintf("marshal to balance error = %v", err.Error())
+		return shim.Error(msg)
 	}
 
 	// 把新余额保存到用户
@@ -197,18 +242,22 @@ func (t *TransferChainCode) Transfer(stub shim.ChaincodeStubInterface, args []st
 	to.Balance = toData
 
 	if err := t.PutAccount(stub, from); err != nil {
-		msg := fmt.Sprintf("save from account error, bank = %v, account = %v, error = %v",
+		msg = fmt.Sprintf("save from account error, bank = %v, account = %v, error = %v",
 			from.BankID, from.ID, err.Error())
 		return shim.Error(msg)
 	}
 	if err := t.PutAccount(stub, to); err != nil {
-		msg := fmt.Sprintf("save to account error, bank = %v, account = %v, error = %v",
+		msg = fmt.Sprintf("save to account error, bank = %v, account = %v, error = %v",
 			to.BankID, to.ID, err.Error())
 		return shim.Error(msg)
 	}
 
 	// 发布转账完成的事件，包含转账的2个用户
-	stub.SetEvent(ChainCodeEventName_Transfer, NewMarshaledTransferEvent(fromBankID, fromAccountID, toBankID, toAccountID, args[4]))
+	err = stub.SetEvent(ChainCodeEventName_Transfer, NewMarshaledTransferEvent(fromBankID, fromAccountID, toBankID, toAccountID, args[4]))
+	if err != nil {
+		msg = errors.WithMessage(err, "set event error").Error()
+		return shim.Error(msg)
+	}
 
 	return shim.Success([]byte("ok"))
 }
