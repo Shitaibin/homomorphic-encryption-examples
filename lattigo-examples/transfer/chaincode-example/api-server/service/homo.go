@@ -18,23 +18,35 @@ var defaultParams = bfv.DefaultParams[bfv.PN13QP218]
 // 用于处理同态加密明文的序列化和反序列化
 var encoder bfv.Encoder
 
+// 银行的私钥和公钥, 加密解密器
+type He struct {
+	BankID    string
+	SK        *bfv.SecretKey
+	PK        *bfv.PublicKey
+	encryptor bfv.Encryptor
+	decryptor bfv.Decryptor
+}
+
+// 存储每家银行的He
+// 数据并不进行持久化，启动后需要调用创建银行接口生成
+var BanksHe map[string]*He
+
 func init() {
+	BanksHe = make(map[string]*He)
+
 	defaultParams.T = 0x3ee0001
 
 	// evaluator = bfv.NewEvaluator(defaultParams)
 	encoder = bfv.NewEncoder(defaultParams)
 }
 
-// 银行的私钥和公钥, 加密解密器
-var (
-	SK        *bfv.SecretKey
-	PK        *bfv.PublicKey
-	encryptor bfv.Encryptor
-	decryptor bfv.Decryptor
-)
+// 获取银行密钥信息
+func GetBank(bid string) *He {
+	return BanksHe[bid]
+}
 
 // SkPkToString
-func SkPkToString() (string, string, error) {
+func SkPkToString(SK *bfv.SecretKey, PK *bfv.PublicKey) (string, string, error) {
 	if SK == nil {
 		return "", "", NoBankError
 	}
@@ -51,13 +63,20 @@ func SkPkToString() (string, string, error) {
 }
 
 func NewBank(bid string) (*models.Bank, error) {
+	var (
+		SK        *bfv.SecretKey
+		PK        *bfv.PublicKey
+		encryptor bfv.Encryptor
+		decryptor bfv.Decryptor
+	)
+
 	kgen := bfv.NewKeyGenerator(defaultParams)
 	SK, PK = kgen.GenKeyPair()
 	encryptor = bfv.NewEncryptorFromPk(defaultParams, PK)
 	decryptor = bfv.NewDecryptor(defaultParams, SK)
 
 	// 转换成结构体
-	sk, pk, err := SkPkToString()
+	sk, pk, err := SkPkToString(SK, PK)
 	if err != nil {
 		return nil, errors.WithMessage(err, "New Bank")
 	}
@@ -90,6 +109,16 @@ func NewBank(bid string) (*models.Bank, error) {
 		resp.TransactionID,
 		resp.TxValidationCode,
 		resp.ChaincodeStatus)
+
+	// 银行密钥信息保存到map
+	he := &He{
+		BankID:    bid,
+		SK:        SK,
+		PK:        PK,
+		encryptor: encryptor,
+		decryptor: decryptor,
+	}
+	BanksHe[bid] = he
 
 	return &models.Bank{
 		BankID:    bid,

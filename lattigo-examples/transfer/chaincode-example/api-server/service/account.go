@@ -24,10 +24,11 @@ func SetAccountBalance(BankID string, AccountID string, Balance uint64) (fab.Tra
 
 	plain := bfv.NewPlaintext(defaultParams)
 	encoder.EncodeUint([]uint64{Balance}, plain)
-	if encryptor == nil {
+	bank := GetBank(BankID)
+	if bank == nil || bank.encryptor == nil {
 		return "", 0, NoBankError
 	}
-	cipBal := encryptor.EncryptNew(plain)
+	cipBal := bank.encryptor.EncryptNew(plain)
 	binBal, err := cipBal.MarshalBinary()
 	if err != nil {
 		return "", 0, errors.WithMessage(err, "marshal cipher balance error")
@@ -82,10 +83,11 @@ func GetAccountBalance(BankID string, AccountID string) (uint64, error) {
 	}
 
 	// 全局变量使用前判空
-	if decryptor == nil || encoder == nil {
+	bank := GetBank(BankID)
+	if bank == nil || bank.decryptor == nil || encoder == nil {
 		return 0, NoBankError
 	}
-	gotPt := decryptor.DecryptNew(gotCipBal)
+	gotPt := bank.decryptor.DecryptNew(gotCipBal)
 	gotBal := encoder.DecodeUint(gotPt)[0]
 
 	//    4. 响应为：BankID、AccountID、Balance
