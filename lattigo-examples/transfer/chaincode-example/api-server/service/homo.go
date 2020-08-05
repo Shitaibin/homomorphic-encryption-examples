@@ -35,6 +35,10 @@ var (
 
 // SkPkToString
 func SkPkToString() (string, string, error) {
+	if SK == nil {
+		return "", "", NoBankError
+	}
+
 	skb, err := SK.MarshalBinary()
 	if err != nil {
 		return "", "", err
@@ -67,6 +71,9 @@ func NewBank(bid string) (*Bank, error) {
 	logs.Info("Bank = %v, len(SK) = %d, len(PK) = %d", bid, len(sk), len(pk))
 
 	// 银行公钥上链
+	if PK == nil {
+		return nil, NoBankError
+	}
 	pb, err := PK.MarshalBinary()
 	if err != nil {
 		return nil, errors.WithMessage(err, "bank pk marshal error")

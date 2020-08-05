@@ -18,10 +18,10 @@ type AddPublicRequest struct {
 	// PublicKey string `json:"publicKey"`
 }
 
-// @Title CreateUser
-// @Description create users
-// @Param	body		body 	models.User	true		"body for user content"
-// @Success 200 {int} models.User.Id
+// @Title CreateBank
+// @Description create bank
+// @Param	body		body 	AddPublicRequest	true		"parameters for create bank account"
+// @Success 200 {object} service.Bank
 // @Failure 403 body is empty
 // @router / [post]
 func (b *BankController) Post() {

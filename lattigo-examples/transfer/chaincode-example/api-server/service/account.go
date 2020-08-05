@@ -9,6 +9,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+var NoBankError error = errors.New("please create bank first")
+
 func SetAccountBalance(BankID string, AccountID string, Balance uint64) (fab.TransactionID, peer.TxValidationCode, error) {
 	if Balance < 0 {
 		return "", 0, errors.New("Balance is negative")
@@ -22,6 +24,9 @@ func SetAccountBalance(BankID string, AccountID string, Balance uint64) (fab.Tra
 
 	plain := bfv.NewPlaintext(defaultParams)
 	encoder.EncodeUint([]uint64{Balance}, plain)
+	if encryptor == nil {
+		return "", 0, NoBankError
+	}
 	cipBal := encryptor.EncryptNew(plain)
 	binBal, err := cipBal.MarshalBinary()
 	if err != nil {
@@ -74,6 +79,11 @@ func GetAccountBalance(BankID string, AccountID string) (uint64, error) {
 	err = gotCipBal.UnmarshalBinary(resp.Payload)
 	if err != nil {
 		return 0, errors.WithMessage(err, "unmarshal balance error")
+	}
+
+	// 全局变量使用前判空
+	if decryptor == nil || encoder == nil {
+		return 0, NoBankError
 	}
 	gotPt := decryptor.DecryptNew(gotCipBal)
 	gotBal := encoder.DecodeUint(gotPt)[0]

@@ -1,7 +1,7 @@
 // @APIVersion 1.0.0
-// @Title beego Test API
-// @Description beego has a very cool tools to autogenerate documents for your API
-// @Contact astaxie@gmail.com
+// @Title Cross Bank Transfer API
+// @Description 基于同态加密的跨行转账API
+// @Contact hz_stb@163.com
 // @TermsOfServiceUrl http://beego.me/
 // @License Apache 2.0
 // @LicenseUrl http://www.apache.org/licenses/LICENSE-2.0.html
@@ -14,32 +14,32 @@ import (
 )
 
 func init() {
-	/*ns := beego.NewNamespace("/v1",
-		beego.NSNamespace("/object",
-			beego.NSInclude(
-				&controllers.ObjectController{},
-			),
-		),
-		beego.NSNamespace("/user",
-			beego.NSInclude(
-				&controllers.UserController{},
-			),
-		),
-		// beego.NSNamespace("/bank",
+	ns := beego.NewNamespace("/v1",
+		// beego.NSNamespace("/object",
 		// 	beego.NSInclude(
-		// 		&controllers.BankController{},
+		// 		&controllers.ObjectController{},
 		// 	),
 		// ),
-		// beego.NSNamespace("/account",
+		// beego.NSNamespace("/user",
 		// 	beego.NSInclude(
-		// 		&controllers.AccountController{},
+		// 		&controllers.UserController{},
 		// 	),
 		// ),
+		beego.NSNamespace("/bank",
+			beego.NSInclude(
+				&controllers.BankController{},
+			),
+		),
+		beego.NSNamespace("/account",
+			beego.NSInclude(
+				&controllers.AccountController{},
+			),
+		),
+		beego.NSNamespace("/transfer",
+			beego.NSInclude(
+				&controllers.TransferController{},
+			),
+		),
 	)
-	beego.AddNamespace(ns)*/
-
-	// todo 换成注解路由
-	beego.Router("/v1/bank", &controllers.BankController{})
-	beego.Router("/v1/account", &controllers.AccountController{})
-	beego.Router("/v1/transfer", &controllers.TransferController{})
+	beego.AddNamespace(ns)
 }

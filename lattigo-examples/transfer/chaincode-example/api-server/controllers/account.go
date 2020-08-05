@@ -32,7 +32,13 @@ type AccountResponse struct {
 	Message   string                `json:"msg"` // 错误信息
 }
 
-// @router /v1/account/:id [get]
+// @Title GetAccount
+// @Description get account by bankId and accountId
+// @Param	bankId		query 	string	true		"The key for get account"
+// @Param	accountId		query 	string	true		"The key for get account"
+// @Success 200 {object} AccountResponse
+// @Failure 403 body is empty
+// @router / [get]
 func (a *AccountController) Get() {
 	logs.Debug("AccountController.Get")
 
@@ -68,12 +74,16 @@ func (a *AccountController) Get() {
 	}
 }
 
-// @router /v1/account [post]
+// @Title Set Account Balance
+// @Description create users
+// @Param	body		body 	AccountRequest	true		"set account balance parameters"
+// @Success 200 {int} models.User.Id
+// @Failure 403 body is empty
+// @router / [post]
 func (a *AccountController) Post() {
 	a.Put()
 }
 
-// @router /v1/account [put]
 func (a *AccountController) Put() {
 	logs.Debug("AccountController.Put")
 

@@ -115,4 +115,43 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
+	// AccountController
+	// todo note只填写get、Get就行，换掉controller名字
+	beego.GlobalControllerRouter["api-server/controllers:AccountController"] = append(beego.GlobalControllerRouter["api-server/controllers:AccountController"],
+		beego.ControllerComments{
+			Method:           "Get",
+			Router:           "/",
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["api-server/controllers:AccountController"] = append(beego.GlobalControllerRouter["api-server/controllers:AccountController"],
+		beego.ControllerComments{
+			Method:           "Post",
+			Router:           "/",
+			AllowHTTPMethods: []string{"post"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	// Bank
+	beego.GlobalControllerRouter["api-server/controllers:BankController"] = append(beego.GlobalControllerRouter["api-server/controllers:BankController"],
+		beego.ControllerComments{
+			Method:           "Post",
+			Router:           "/",
+			AllowHTTPMethods: []string{"post"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	// Transfer
+	beego.GlobalControllerRouter["api-server/controllers:TransferController"] = append(beego.GlobalControllerRouter["api-server/controllers:TransferController"],
+		beego.ControllerComments{
+			Method:           "Post",
+			Router:           "/",
+			AllowHTTPMethods: []string{"post"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
 }

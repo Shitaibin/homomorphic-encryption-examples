@@ -34,7 +34,12 @@ type TransferResponse struct {
 	Message       string                `json:"msg"` // 错误信息
 }
 
-// @router /v1/transfer [post]
+// @Title CreateTransfer
+// @Description create transfer
+// @Param	body		body 	TransferRequest	true		"parameters for transfer"
+// @Success 200 {object} TransferResponse
+// @Failure 403 body is empty
+// @router / [post]
 func (t *TransferController) Post() {
 	logs.Debug("TransferController.Post")
 
