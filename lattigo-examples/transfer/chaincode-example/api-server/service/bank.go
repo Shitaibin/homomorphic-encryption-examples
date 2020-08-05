@@ -2,6 +2,9 @@ package service
 
 import (
 	"api-server/models"
+	"bufio"
+	"encoding/base64"
+	"os"
 
 	"github.com/astaxie/beego/logs"
 	"github.com/hyperledger/fabric-sdk-go/pkg/client/channel"
@@ -55,7 +58,7 @@ func SkPkToString(SK *bfv.SecretKey, PK *bfv.PublicKey) (string, string, error) 
 	if err != nil {
 		return "", "", err
 	}
-	pkb, err := SK.MarshalBinary()
+	pkb, err := PK.MarshalBinary()
 	if err != nil {
 		return "", "", err
 	}
@@ -75,6 +78,8 @@ func NewBank(bid string) (*models.Bank, error) {
 	encryptor = bfv.NewEncryptorFromPk(defaultParams, PK)
 	decryptor = bfv.NewDecryptor(defaultParams, SK)
 
+	logs.Info("Generate bank %s keys success.", bid)
+
 	// 转换成结构体
 	sk, pk, err := SkPkToString(SK, PK)
 	if err != nil {
@@ -82,16 +87,7 @@ func NewBank(bid string) (*models.Bank, error) {
 	}
 	logs.Info("Bank = %v, len(SK) = %d, len(PK) = %d", bid, len(sk), len(pk))
 
-	// 银行公钥上链
-	if PK == nil {
-		return nil, NoBankError
-	}
-	pb, err := PK.MarshalBinary()
-	if err != nil {
-		return nil, errors.WithMessage(err, "bank pk marshal error")
-	}
-
-	args := packArgs([]string{bid, string(pb)})
+	args := packArgs([]string{bid, pk})
 	req := channel.Request{
 		ChaincodeID: ChainCodeName,
 		Fcn:         "AddBankPublicKey",
@@ -126,4 +122,44 @@ func NewBank(bid string) (*models.Bank, error) {
 		ValidCode: resp.TxValidationCode,
 		Message:   "success",
 	}, nil
+}
+
+func SaveBankKeys(bid, fp string) error {
+	logs.Info("Save bank %s keys to %s", bid, fp)
+
+	bank := GetBank(bid)
+	sk, pk, err := SkPkToString(bank.SK, bank.PK)
+	if err != nil {
+		return errors.WithMessage(err, "Get key failed")
+	}
+	base64sk := base64.StdEncoding.EncodeToString([]byte(sk))
+	base64pk := base64.StdEncoding.EncodeToString([]byte(pk))
+
+	// 打开文件
+	f, err := os.Create(fp)
+	// f, err := os.OpenFile(fp, os.O_APPEND|os.O_CREATE, 0666) //打开文件
+	if err != nil {
+		return errors.WithMessage(err, "open file error")
+	}
+	defer f.Close()
+
+	// 准备待写文件
+	skTitle := "----------------Secret Key----------------\n"
+	pkTitle := "----------------Public Key----------------\n"
+	lines := []string{skTitle, base64sk, "\n", pkTitle, base64pk}
+
+	// 写文件
+	logs.Info("Ready to writer %s", fp)
+	wf := bufio.NewWriter(f)
+	defer wf.Flush()
+	for _, l := range lines {
+		_, err = wf.WriteString(l)
+		if err != nil {
+			return errors.WithMessage(err, "write error")
+		}
+	}
+
+	logs.Info("Write keys file done.")
+
+	return nil
 }

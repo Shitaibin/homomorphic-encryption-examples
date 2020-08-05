@@ -28,11 +28,16 @@ func SetAccountBalance(BankID string, AccountID string, Balance uint64) (fab.Tra
 	if bank == nil || bank.encryptor == nil {
 		return "", 0, NoBankError
 	}
+
+	logs.Info("Get bank %s encrypt key success", BankID)
+
 	cipBal := bank.encryptor.EncryptNew(plain)
 	binBal, err := cipBal.MarshalBinary()
 	if err != nil {
 		return "", 0, errors.WithMessage(err, "marshal cipher balance error")
 	}
+
+	logs.Info("Encrypt balance success, bank = %s, account = %s", BankID, AccountID)
 
 	args := packArgs([]string{BankID, AccountID, string(binBal)})
 	req := channel.Request{
@@ -47,8 +52,8 @@ func SetAccountBalance(BankID string, AccountID string, Balance uint64) (fab.Tra
 		return "", 0, errors.WithMessage(err, "invoke chaincode error")
 	}
 
-	logs.Info("Invoke chaincode response:\n"+
-		"id: %v\nvalidate: %v\nchaincode status: %v\n\n",
+	logs.Info("Upload balance onto blockchain success:\n"+
+		"txid: %v\nvalidate: %v\nchaincode status: %v\n\n",
 		resp.TransactionID,
 		resp.TxValidationCode,
 		resp.ChaincodeStatus)
@@ -82,6 +87,8 @@ func GetAccountBalance(BankID string, AccountID string) (uint64, error) {
 		return 0, errors.WithMessage(err, "unmarshal balance error")
 	}
 
+	logs.Info("Query account balance from blockchain success, bank = %s, account = %s", BankID, AccountID)
+
 	// 全局变量使用前判空
 	bank := GetBank(BankID)
 	if bank == nil || bank.decryptor == nil || encoder == nil {
@@ -89,6 +96,8 @@ func GetAccountBalance(BankID string, AccountID string) (uint64, error) {
 	}
 	gotPt := bank.decryptor.DecryptNew(gotCipBal)
 	gotBal := encoder.DecodeUint(gotPt)[0]
+
+	logs.Info("Decrypt account balance success, bank = %s, account = %s, balance = %v", BankID, AccountID, gotBal)
 
 	//    4. 响应为：BankID、AccountID、Balance
 	return gotBal, nil

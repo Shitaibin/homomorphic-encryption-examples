@@ -119,7 +119,7 @@ func init() {
 	beego.GlobalControllerRouter["api-server/controllers:AccountController"] = append(beego.GlobalControllerRouter["api-server/controllers:AccountController"],
 		beego.ControllerComments{
 			Method:           "Get",
-			Router:           ":accountId/bank/:bankId",
+			Router:           "/:accountId/bank/:bankId",
 			AllowHTTPMethods: []string{"get"},
 			MethodParams:     param.Make(),
 			Filters:          nil,
@@ -140,6 +140,15 @@ func init() {
 			Method:           "Post",
 			Router:           "/",
 			AllowHTTPMethods: []string{"post"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["api-server/controllers:BankController"] = append(beego.GlobalControllerRouter["api-server/controllers:BankController"],
+		beego.ControllerComments{
+			Method:           "Keys",
+			Router:           "/:bankId/key",
+			AllowHTTPMethods: []string{"get"},
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})

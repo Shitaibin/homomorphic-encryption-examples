@@ -53,3 +53,25 @@ func (b *BankController) Post() {
 		b.Data["json"] = bank
 	}
 }
+
+// @Title GetBankKeys
+// @Description get keys of bank
+// @Param	bankId		path 	string	true		"bankId for get bank keys"
+// @Success 200 {object} models.User
+// @Failure 403 :bankId is empty
+// @router /:bankId/key [get]
+func (b *BankController) Keys() {
+	bid := b.GetString(":bankId")
+	if bid == "" {
+		b.Ctx.WriteString("bid is empty")
+	}
+
+	keyName := bid + ".keys"
+	fp := "./keys/" + keyName
+
+	if err := service.SaveBankKeys(bid, fp); err != nil {
+		b.Ctx.WriteString(fmt.Sprintf("Download bank keys error: %s", err.Error()))
+	}
+
+	b.Ctx.Output.Download(fp, keyName)
+}

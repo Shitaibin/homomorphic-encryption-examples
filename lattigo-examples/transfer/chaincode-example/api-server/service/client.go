@@ -47,7 +47,7 @@ type Client struct {
 }
 
 func NewOrg1Peer0Client() *Client {
-	logs.Info("Create fabric client for org1 (bank001)")
+	logs.Info("Create fabric client")
 
 	return NewClient(org1CfgPath, "Org1", "Admin", "User1")
 }
