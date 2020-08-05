@@ -34,18 +34,23 @@ type AccountResponse struct {
 
 // @Title GetAccount
 // @Description get account by bankId and accountId
-// @Param	bankId		query 	string	true		"The key for get account"
-// @Param	accountId		query 	string	true		"The key for get account"
+// @Param	bankId		path 	string	true		"The key for get account"
+// @Param	accountId		path 	string	true		"The key for get account"
 // @Success 200 {object} AccountResponse
 // @Failure 403 body is empty
-// @router / [get]
+// @router /:accountId/bank/:bankId [get]
 func (a *AccountController) Get() {
 	logs.Debug("AccountController.Get")
 
 	defer a.ServeJSON()
 
-	bid := a.GetString("bankId")
-	aid := a.GetString("accountId")
+	// 方法1
+	bid := a.GetString(":bankId")
+	aid := a.GetString(":accountId")
+
+	// 方法2
+	// bid := a.Ctx.Input.Param(":bankId")
+	// aid := a.Ctx.Input.Param(":accountId")
 
 	if len(bid) <= 0 || len(aid) <= 0 {
 		msg := fmt.Sprintf("not enough params for AccountController, bid = %v, aid = %v", bid, aid)

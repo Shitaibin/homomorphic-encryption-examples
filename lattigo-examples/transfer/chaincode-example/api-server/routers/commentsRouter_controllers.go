@@ -116,11 +116,10 @@ func init() {
 			Params:           nil})
 
 	// AccountController
-	// todo note只填写get、Get就行，换掉controller名字
 	beego.GlobalControllerRouter["api-server/controllers:AccountController"] = append(beego.GlobalControllerRouter["api-server/controllers:AccountController"],
 		beego.ControllerComments{
 			Method:           "Get",
-			Router:           "/",
+			Router:           ":accountId/bank/:bankId",
 			AllowHTTPMethods: []string{"get"},
 			MethodParams:     param.Make(),
 			Filters:          nil,
