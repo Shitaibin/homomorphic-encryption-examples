@@ -1,12 +1,10 @@
 package controllers
 
 import (
+	"api-server/models"
 	"api-server/service"
 	"encoding/json"
 	"fmt"
-
-	"github.com/hyperledger/fabric-protos-go/peer"
-	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/fab"
 
 	"github.com/astaxie/beego/logs"
 
@@ -17,26 +15,11 @@ type AccountController struct {
 	beego.Controller
 }
 
-type AccountRequest struct {
-	BankID    string `json:"bankId"`
-	AccountID string `json:"accountId"`
-	Balance   uint64 `json:"balance"`
-}
-
-type AccountResponse struct {
-	BankID    string                `json:"bankId"`
-	AccountID string                `json:"accountId"`
-	Balance   uint64                `json:"balance"`
-	TxID      fab.TransactionID     `json:"txId"`
-	ValidCode peer.TxValidationCode `json:"validCode"`
-	Message   string                `json:"msg"` // 错误信息
-}
-
 // @Title GetAccount
 // @Description get account by bankId and accountId
 // @Param	bankId		path 	string	true		"The key for get account"
 // @Param	accountId		path 	string	true		"The key for get account"
-// @Success 200 {object} AccountResponse
+// @Success 200 {object} models.AccountResponse
 // @Failure 403 body is empty
 // @router /:accountId/bank/:bankId [get]
 func (a *AccountController) Get() {
@@ -63,14 +46,14 @@ func (a *AccountController) Get() {
 	if err != nil {
 		msg := fmt.Sprintf("GetAccountBalance error: %v", err)
 		logs.Error(msg)
-		a.Data["json"] = AccountResponse{
+		a.Data["json"] = models.AccountResponse{
 			BankID:    bid,
 			AccountID: aid,
 			Balance:   bal,
 			Message:   msg,
 		}
 	} else {
-		a.Data["json"] = AccountResponse{
+		a.Data["json"] = models.AccountResponse{
 			BankID:    bid,
 			AccountID: aid,
 			Balance:   bal,
@@ -81,7 +64,7 @@ func (a *AccountController) Get() {
 
 // @Title Set Account Balance
 // @Description create users
-// @Param	body		body 	AccountRequest	true		"set account balance parameters"
+// @Param	body		body 	models.AccountRequest	true		"set account balance parameters"
 // @Success 200 {int} models.User.Id
 // @Failure 403 body is empty
 // @router / [post]
@@ -94,7 +77,7 @@ func (a *AccountController) Put() {
 
 	defer a.ServeJSON()
 
-	var req AccountRequest
+	var req models.AccountRequest
 	if err := json.Unmarshal(a.Ctx.Input.RequestBody, &req); err != nil {
 		msg := fmt.Sprintf("unmarshal AccountRequest error: %s", err.Error())
 		logs.Error(msg)
@@ -114,7 +97,7 @@ func (a *AccountController) Put() {
 	if err != nil {
 		msg := fmt.Sprintf("GetAccountBalance error: %v", err)
 		logs.Error(msg)
-		a.Data["json"] = AccountResponse{
+		a.Data["json"] = models.AccountResponse{
 			BankID:    req.BankID,
 			AccountID: req.AccountID,
 			Balance:   req.Balance,
@@ -123,7 +106,7 @@ func (a *AccountController) Put() {
 			Message:   msg,
 		}
 	} else {
-		a.Data["json"] = AccountResponse{
+		a.Data["json"] = models.AccountResponse{
 			BankID:    req.BankID,
 			AccountID: req.AccountID,
 			Balance:   req.Balance,

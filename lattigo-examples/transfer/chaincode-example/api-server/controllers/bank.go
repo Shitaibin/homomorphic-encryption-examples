@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"api-server/models"
 	"api-server/service"
 	"encoding/json"
 	"fmt"
@@ -13,15 +14,10 @@ type BankController struct {
 	beego.Controller
 }
 
-type AddPublicRequest struct {
-	BankID string `json:"bankId"`
-	// PublicKey string `json:"publicKey"`
-}
-
 // @Title CreateBank
 // @Description create bank
-// @Param	body		body 	AddPublicRequest	true		"parameters for create bank account"
-// @Success 200 {object} service.Bank
+// @Param	body		body 	models.AddPublicRequest	true		"parameters for create bank account"
+// @Success 200 {object} models.Bank
 // @Failure 403 body is empty
 // @router / [post]
 func (b *BankController) Post() {
@@ -40,7 +36,7 @@ func (b *BankController) Post() {
 
 	defer b.ServeJSON()
 
-	var req AddPublicRequest
+	var req models.AddPublicRequest
 	if err := json.Unmarshal(b.Ctx.Input.RequestBody, &req); err != nil {
 		msg := fmt.Sprintf("unmarshal AddPublicRequest error: %s", err.Error())
 		logs.Error(msg)

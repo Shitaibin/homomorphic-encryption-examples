@@ -1,10 +1,10 @@
 package service
 
 import (
+	"api-server/models"
+
 	"github.com/astaxie/beego/logs"
-	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric-sdk-go/pkg/client/channel"
-	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/fab"
 	"github.com/ldsec/lattigo/bfv"
 	"github.com/pkg/errors"
 )
@@ -50,14 +50,7 @@ func SkPkToString() (string, string, error) {
 	return string(skb), string(pkb), nil
 }
 
-type Bank struct {
-	BankID    string                `json:"bankId"`
-	TxID      fab.TransactionID     `json:"txId"`
-	ValidCode peer.TxValidationCode `json:"validCode"`
-	Message   string                `json:"msg"` // 错误信息
-}
-
-func NewBank(bid string) (*Bank, error) {
+func NewBank(bid string) (*models.Bank, error) {
 	kgen := bfv.NewKeyGenerator(defaultParams)
 	SK, PK = kgen.GenKeyPair()
 	encryptor = bfv.NewEncryptorFromPk(defaultParams, PK)
@@ -98,7 +91,7 @@ func NewBank(bid string) (*Bank, error) {
 		resp.TxValidationCode,
 		resp.ChaincodeStatus)
 
-	return &Bank{
+	return &models.Bank{
 		BankID:    bid,
 		TxID:      resp.TransactionID,
 		ValidCode: resp.TxValidationCode,
