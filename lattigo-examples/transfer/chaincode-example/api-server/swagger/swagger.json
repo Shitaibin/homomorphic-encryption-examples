@@ -1,0 +1,179 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "Cross Bank Transfer API",
+        "description": "基于同态加密的跨行转账API",
+        "version": "1.0.0",
+        "termsOfService": "http://beego.me/",
+        "contact": {
+            "email": "hz_stb@163.com"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        }
+    },
+    "basePath": "/v1",
+    "paths": {
+        "/account/": {
+            "post": {
+                "tags": [
+                    "account"
+                ],
+                "description": "create users",
+                "operationId": "AccountController.Set Account Balance",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "set account balance parameters",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.AccountRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{int} models.User.Id"
+                    },
+                    "403": {
+                        "description": "body is empty"
+                    }
+                }
+            }
+        },
+        "/account/{accountId}/bank/{bankId}": {
+            "get": {
+                "tags": [
+                    "account"
+                ],
+                "description": "get account by bankId and accountId",
+                "operationId": "AccountController.GetAccount",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "bankId",
+                        "description": "The key for get account",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "accountId",
+                        "description": "The key for get account",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.AccountResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "body is empty"
+                    }
+                }
+            }
+        },
+        "/bank/": {
+            "post": {
+                "tags": [
+                    "bank"
+                ],
+                "description": "create bank",
+                "operationId": "BankController.CreateBank",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "parameters for create bank account",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.AddPublicRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Bank"
+                        }
+                    },
+                    "403": {
+                        "description": "body is empty"
+                    }
+                }
+            }
+        },
+        "/transfer/": {
+            "post": {
+                "tags": [
+                    "transfer"
+                ],
+                "description": "create transfer",
+                "operationId": "TransferController.CreateTransfer",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "parameters for transfer",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.TransferRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.TransferResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "body is empty"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.AccountRequest": {
+            "title": "AccountRequest",
+            "type": "object"
+        },
+        "models.AccountResponse": {
+            "title": "AccountResponse",
+            "type": "object"
+        },
+        "models.AddPublicRequest": {
+            "title": "AddPublicRequest",
+            "type": "object"
+        },
+        "models.Bank": {
+            "title": "Bank",
+            "type": "object"
+        },
+        "models.Object": {
+            "title": "Object",
+            "type": "object"
+        },
+        "models.TransferRequest": {
+            "title": "TransferRequest",
+            "type": "object"
+        },
+        "models.TransferResponse": {
+            "title": "TransferResponse",
+            "type": "object"
+        },
+        "models.User": {
+            "title": "User",
+            "type": "object"
+        }
+    }
+}
