@@ -1,9 +1,10 @@
 基于同态加密的转账Demo
 ============
 
-分为2个项目:
+分为3个项目:
 - chaincode目录: 链码项目
 - api-server: 提供通过RESTful API调用链码的接口服务器
+- front-end: 前端页面
 
 
 ## API-Server功能
@@ -26,6 +27,7 @@
     1. 请求参数为：FromBankID、FromAccountID、ToBankID、ToAccountID、Amount
     2. Server调用链码`Transfer`进行链上用户余额转账
     3. 响应为：FromBankID、FromAccountID、ToBankID、ToAccountID、Amount、Status（成功或失败）
+5. 银行密钥文件下载 [✔️]
 
 ## 演示交互案例
 

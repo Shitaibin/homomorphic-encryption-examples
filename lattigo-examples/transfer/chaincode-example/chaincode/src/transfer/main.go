@@ -37,15 +37,12 @@ func (t *TransferChainCode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success([]byte("ok"))
 }
 
-func (t *TransferChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
-	// todo recover用的不好，没错误的时候也会捕获，如何不改变原有的行为呢？
-	// defer func() {
-	// 	err := recover()
-	// 	if err != nil {
-	// 		shim.Error(fmt.Sprintf("catch panic: %v", err.(error).Error()))
-	// 	}
-	// 	shim.Success([]byte(fmt.Sprintf("no error should not return: error = %v", err.(error).Error())))
-	// }()
+func (t *TransferChainCode) Invoke(stub shim.ChaincodeStubInterface) (resp pb.Response) {
+	defer func() {
+		if err := recover(); err != nil {
+			resp = shim.Error(fmt.Sprintf("catch panic: %v", err.(error).Error()))
+		}
+	}()
 
 	f, args := stub.GetFunctionAndParameters()
 
